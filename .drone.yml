@@ -10,9 +10,9 @@ steps:
       - name: docker-sock
         path: /var/run/docker.sock
     commands:
-      - docker build -t telegram-bot:latest .
-      - docker stop telegram-bot || true
-      - docker rm telegram-bot || true
+      - docker build -t asimogobot:latest .
+      - docker stop asimogobot || true
+      - docker rm asimogobot || true
       - docker run -d --name asimogobot -e BOT_TOKEN=${BOT_TOKEN} asimogobot:latest
 
 volumes:
