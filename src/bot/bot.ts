@@ -35,8 +35,6 @@ bot.on('message:photo', async (ctx) => {
 });
 
 
-
-
 bot.command('start', ctx => {
     return ctx.reply('嗨，哥们，我是你的私人高级助理！请发送 /help 查看可用命令');
 })
