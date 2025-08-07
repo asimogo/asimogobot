@@ -36,7 +36,7 @@ bot.on('message:photo', async (ctx) => {
 
 
 bot.command('start', ctx => {
-    return ctx.reply('嗨，哥们，我是你的私人助理！请发送 /help 查看可用命令');
+    return ctx.reply('嗨，主人，我是你的私人助理！请发送 /help 查看可用命令');
 })
 
 bot.callbackQuery('save_flomo', async (ctx) => {
