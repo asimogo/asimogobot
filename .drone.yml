@@ -8,11 +8,14 @@ steps:
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
+    environment:
+      BOT_TOKEN:
+        from_secret: BOT_TOKEN
     commands:
       - docker build -t asimogobot:latest .
       - docker stop asimogobot || true
       - docker rm asimogobot || true
-      - docker run -d --name asimogobot -e BOT_TOKEN=${BOT_TOKEN} asimogobot:latest
+      - docker run -d --name asimogobot -e BOT_TOKEN=$BOT_TOKEN asimogobot:latest
 
 volumes:
   - name: docker-sock
