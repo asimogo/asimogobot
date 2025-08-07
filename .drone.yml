@@ -1,15 +1,20 @@
+kind: pipeline
+type: docker
+name: deploy-bot
+
 steps:
-  - name: deploy
+  - name: build-and-deploy
     image: appleboy/drone-docker
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
-    environment:
-      BOT_TOKEN:
-        from_secret: BOT_TOKEN
     commands:
-      - echo "BOT_TOKEN (first 5 chars): ${BOT_TOKEN:0:5}*****"
       - docker build -t asimogobot:latest .
       - docker stop asimogobot || true
       - docker rm asimogobot || true
-      - docker run -d --name asimogobot -e BOT_TOKEN=$BOT_TOKEN asimogobot:latest
+      - docker run -d --name asimogobot -e BOT_TOKEN=${BOT_TOKEN} asimogobot:latest
+
+volumes:
+  - name: docker-sock
+    host:
+      path: /var/run/docker.sock
