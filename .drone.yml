@@ -4,18 +4,32 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: appleboy/drone-docker
+    image: docker:dind
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
       BOT_TOKEN:
         from_secret: BOT_TOKEN
+      # 添加百度OCR相关的环境变量
+      BAIDU_API_KEY:
+        from_secret: BAIDU_API_KEY
+      BAIDU_SECRET_KEY:
+        from_secret: BAIDU_SECRET_KEY
     commands:
-      - docker build -t asimogobot:latest .
+      # 确保停止所有旧容器实例
       - docker stop asimogobot || true
       - docker rm asimogobot || true
-      - docker run -d --name asimogobot -e BOT_TOKEN=$BOT_TOKEN asimogobot:latest
+      # 清理可能的重复容器
+      - docker ps -a | grep asimogobot | awk '{print $1}' | xargs -r docker rm -f
+      # 构建新镜像
+      - docker build -t asimogobot:latest .
+      # 启动新容器，传递所有必要的环境变量
+      - docker run -d --name asimogobot
+        -e BOT_TOKEN=$$BOT_TOKEN
+        -e BAIDU_API_KEY=$$BAIDU_API_KEY
+        -e BAIDU_SECRET_KEY=$$BAIDU_SECRET_KEY
+        asimogobot:latest
 
 volumes:
   - name: docker-sock
