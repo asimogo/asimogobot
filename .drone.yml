@@ -8,6 +8,7 @@ steps:
       BOT_TOKEN:
         from_secret: BOT_TOKEN
     commands:
+      - echo "BOT_TOKEN (first 5 chars): ${BOT_TOKEN:0:5}*****"
       - docker build -t asimogobot:latest .
       - docker stop asimogobot || true
       - docker rm asimogobot || true
