@@ -1,11 +1,10 @@
-# .drone.yml
 kind: pipeline
 type: docker
 name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: node:20
+    image: appleboy/drone-docker
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
