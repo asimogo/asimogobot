@@ -23,7 +23,7 @@ steps:
       NOTION_PAGE_ID:
         from_secret: NOTION_PAGE_ID
       DEEPSEEK_API_KEY:
-        from_secret: $$DEEPSEEK_API_KEY
+        from_secret: DEEPSEEK_API_KEY
             
 
     commands:
