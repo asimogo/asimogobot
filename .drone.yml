@@ -1,0 +1,21 @@
+# .drone.yml
+kind: pipeline
+type: docker
+name: deploy-bot
+
+steps:
+  - name: build-and-deploy
+    image: node:20
+    volumes:
+      - name: docker-sock
+        path: /var/run/docker.sock
+    commands:
+      - docker build -t telegram-bot:latest .
+      - docker stop telegram-bot || true
+      - docker rm telegram-bot || true
+      - docker run -d --name telegram-bot -e BOT_TOKEN=${BOT_TOKEN} telegram-bot:latest
+
+volumes:
+  - name: docker-sock
+    host:
+      path: /var/run/docker.sock
