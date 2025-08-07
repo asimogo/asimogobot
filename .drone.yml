@@ -12,10 +12,18 @@ steps:
       BOT_TOKEN:
         from_secret: BOT_TOKEN
       # 添加百度OCR相关的环境变量
-      BAIDU_API_KEY:
-        from_secret: BAIDU_API_KEY
-      BAIDU_SECRET_KEY:
-        from_secret: BAIDU_SECRET_KEY
+      BAIDU_APPID:
+        from_secret: BAIDU_APPID
+      BAIDU_SECRET:
+        from_secret: BAIDU_SECRET
+      FLOMO_WEBHOOK:
+        from_secret: FLOMO_WEBHOOK
+      NOTION_API_KEY:
+        from_secret: NOTION_API_KEY
+      NOTION_PAGE_ID:
+        from_secret: NOTION_PAGE_ID
+            
+
     commands:
       # 确保停止所有旧容器实例
       - docker stop asimogobot || true
@@ -27,8 +35,12 @@ steps:
       # 启动新容器，传递所有必要的环境变量
       - docker run -d --name asimogobot
         -e BOT_TOKEN=$$BOT_TOKEN
-        -e BAIDU_API_KEY=$$BAIDU_API_KEY
-        -e BAIDU_SECRET_KEY=$$BAIDU_SECRET_KEY
+        -e BAIDU_APPID=$$BAIDU_APPID
+        -e BAIDU_SECRET=$$BAIDU_SECRET
+        -e DEEPSEEK_API_KEY=$$DEEPSEEK_API_KEY
+        -e FLOMO_WEBHOOK=$$FLOMO_WEBHOOK
+        -e NOTION_API_KEY=$$NOTION_API_KEY
+        -e NOTION_PAGE_ID=$$NOTION_PAGE_ID
         asimogobot:latest
 
 volumes:
