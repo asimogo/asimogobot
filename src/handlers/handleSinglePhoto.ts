@@ -10,6 +10,10 @@ export async function handleSinglePhoto(ctx: MyContext) {
     if (!fileId) return;
 
     const rawText = await handleOCR(process.env.BOT_TOKEN!, fileId);
+
+    console.log('机器人完成了百度图片OCR');
+    console.log('现在交给DeepSeek润色');
+
     const polished = await handlePolish(rawText);
 
 
@@ -18,7 +22,7 @@ export async function handleSinglePhoto(ctx: MyContext) {
 
     //如果文本超过4000就会出错
     // await ctx.reply(`✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
-    await safeReply(`✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
+    await safeReply(ctx, `✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
     await ctx.reply('是否保存到 Flomo？', {
         reply_markup: {
             inline_keyboard: [
