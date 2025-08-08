@@ -16,7 +16,7 @@ export async function handleSinglePhoto(ctx: MyContext) {
     //润色完毕
     ctx.session.lastPolishedText = polished;
 
-    //如果文本超过2000就会出错
+    //如果文本超过4000就会出错
     // await ctx.reply(`✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
     await safeReply(`✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
     await ctx.reply('是否保存到 Flomo？', {
