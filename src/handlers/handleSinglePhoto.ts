@@ -23,7 +23,7 @@ export async function handleSinglePhoto(ctx: MyContext) {
     //如果文本超过4000就会出错
     // await ctx.reply(`✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
     await safeReply(ctx, `✨ 澎色完成内容：\n\n${polished}`, { parse_mode: 'Markdown' });
-    await ctx.reply('是否保存到 Flomo？', {
+    await ctx.reply('是否保存到 Flomo？或者 Notion?', {
         reply_markup: {
             inline_keyboard: [
                 [{ text: '✅ 保存到 Flomo', callback_data: 'save_flomo' },
