@@ -27,7 +27,7 @@ steps:
             
 
     commands:
-      # 确保停止所有旧容器实例
+      # 确保停止所有旧容器实例测试
       - docker stop asimogobot || true
       - docker rm asimogobot || true
       # 清理可能的重复容器
