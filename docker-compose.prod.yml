@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  bot:
+    build: .
+    container_name: telegram_bot_prod
+    env_file:
+      - .env
+    restart: unless-stopped
+    
+    # 健康检查配置
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # 生产环境资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # 生产环境日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    
+    # 网络配置
+    networks:
+      - bot_network
+    
+    # 卷挂载（用于日志持久化）
+    volumes:
+      - ./logs:/app/logs:rw
+    
+    # 环境变量覆盖
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+
+networks:
+  bot_network:
+    driver: bridge
+
+# 可选：添加 watchtower 用于自动更新
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_INCLUDE_STOPPED=true
+    restart: unless-stopped
+    networks:
+      - bot_network

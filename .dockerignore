@@ -1,16 +1,44 @@
+# 依赖文件
 node_modules
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.git
-.gitignore
-README.md
+
+# 环境配置
 .env
-.nyc_output
-coverage
+.env.local
+.env.*.local
+
+# 开发工具
 .vscode
 .idea
-dist
+*.swp
+*.swo
+
+# 日志文件
+logs
 *.log
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 文档
+README.md
+*.md
+
+# 测试
+test
+tests
+*.test.js
+*.test.ts
+
+# 其他
 .DS_Store
 Thumbs.db
+dist
+build
+coverage

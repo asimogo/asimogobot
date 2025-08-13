@@ -2,9 +2,10 @@ import { handleSinglePhoto } from '../handlers/handleSinglePhoto.js';
 import { handleMediaGroupPhoto } from '../handlers/handleMediaGroupPhoto.js';
 import { handleFlomo } from '../handlers/handleFlomo.js';
 import { handleNotion } from '../handlers/handleNotion.js';
-import { Bot, session } from 'grammy';
+import { Bot, session, webhookCallback } from 'grammy';
 import type { MyContext, SessionData } from '../utils/types.js';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 
 
 // 加载环境变量
@@ -73,4 +74,44 @@ bot.callbackQuery('save_notion', async (ctx) => {
     }
 });
 
+// 创建健康检查服务器
+const port = process.env.PORT || 3000;
+const server = createServer((req, res) => {
+    if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+            status: 'OK', 
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+        }));
+    } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+    }
+});
+
+server.listen(port, () => {
+    console.log(`Health check server running on port ${port}`);
+});
+
+// 启动 bot
 bot.start();
+
+// 优雅关闭处理
+process.on('SIGINT', () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    bot.stop();
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    bot.stop();
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});

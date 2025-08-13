@@ -1,51 +1,148 @@
 kind: pipeline
 type: docker
-name: deploy-bot
+name: telegram-bot-ci
+
+# 触发条件
+trigger:
+  branch:
+    - main
+    - develop
+  event:
+    - push
+    - pull_request
+
+# 全局环境变量
+environment:
+  DOCKER_REGISTRY: 192.168.0.105:5000 # 如果您有本地 Docker Registry
+  IMAGE_NAME: telegram-bot
 
 steps:
-  - name: build-and-deploy
-    image: docker:dind
-    volumes:
-      - name: docker-sock
-        path: /var/run/docker.sock
-    environment:
-      BOT_TOKEN:
-        from_secret: BOT_TOKEN
-      # 添加百度OCR相关的环境变量
-      BAIDU_APPID:
-        from_secret: BAIDU_APPID
-      BAIDU_SECRET:
-        from_secret: BAIDU_SECRET
-      FLOMO_WEBHOOK:
-        from_secret: FLOMO_WEBHOOK
-      NOTION_API_KEY:
-        from_secret: NOTION_API_KEY
-      NOTION_PAGE_ID:
-        from_secret: NOTION_PAGE_ID
-      DEEPSEEK_API_KEY:
-        from_secret: DEEPSEEK_API_KEY
-            
-
+  # 1. 代码检查和测试
+  - name: code-analysis
+    image: node:20-alpine3.19
     commands:
-      # 确保停止所有旧容器实例测试
-      - docker stop asimogobot || true
-      - docker rm asimogobot || true
-      # 清理可能的重复容器
-      - docker ps -a | grep asimogobot | awk '{print $1}' | xargs -r docker rm -f
-      # 构建新镜像
-      - docker build -t asimogobot:latest .
-      # 启动新容器，传递所有必要的环境变量
-      - docker run -d --name asimogobot
-        -e BOT_TOKEN=$$BOT_TOKEN
-        -e BAIDU_APPID=$$BAIDU_APPID
-        -e BAIDU_SECRET=$$BAIDU_SECRET
-        -e DEEPSEEK_API_KEY=$$DEEPSEEK_API_KEY
-        -e FLOMO_WEBHOOK=$$FLOMO_WEBHOOK
-        -e NOTION_API_KEY=$$NOTION_API_KEY
-        -e NOTION_PAGE_ID=$$NOTION_PAGE_ID
-        asimogobot:latest
+      - npm ci
+      - npm run build
+      - echo "✅ 代码构建成功"
+    when:
+      event:
+        - push
+        - pull_request
 
-volumes:
-  - name: docker-sock
-    host:
-      path: /var/run/docker.sock
+  # 2. 安全扫描（可选）
+  - name: security-scan
+    image: aquasec/trivy:latest
+    commands:
+      - trivy fs --exit-code 0 --no-progress --format table .
+    when:
+      event:
+        - push
+      branch:
+        - main
+
+  # 3. 构建 Docker 镜像
+  - name: build-image
+    image: plugins/docker
+    settings:
+      registry: 192.168.0.105:5000 # 您的本地 Docker Registry
+      repo: 192.168.0.105:5000/telegram-bot
+      tags:
+        - latest
+        - ${DRONE_COMMIT_SHA:0:8}
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      dockerfile: Dockerfile
+      context: .
+    when:
+      event:
+        - push
+      branch:
+        - main
+
+  # 4. 部署到测试环境
+  - name: deploy-staging
+    image: appleboy/drone-ssh
+    settings:
+      host: 192.168.0.105 # 您的部署服务器
+      username:
+        from_secret: ssh_username
+      password:
+        from_secret: ssh_password
+      port: 22
+      script:
+        - cd /opt/telegram-bot-staging
+        - docker-compose down || true
+        - docker-compose pull
+        - docker-compose up -d
+        - echo "✅ 测试环境部署完成"
+    when:
+      event:
+        - push
+      branch:
+        - develop
+
+  # 5. 部署到生产环境
+  - name: deploy-production
+    image: appleboy/drone-ssh
+    settings:
+      host: 192.168.0.105 # 您的生产服务器
+      username:
+        from_secret: ssh_username
+      password:
+        from_secret: ssh_password
+      port: 22
+      script:
+        - cd /opt/telegram-bot
+        - docker-compose -f docker-compose.prod.yml down || true
+        - docker-compose -f docker-compose.prod.yml pull
+        - docker-compose -f docker-compose.prod.yml up -d
+        - echo "✅ 生产环境部署完成"
+    when:
+      event:
+        - push
+      branch:
+        - main
+
+  # 6. 通知
+  - name: notify
+    image: plugins/webhook
+    settings:
+      urls:
+        from_secret: webhook_url
+      content_type: application/json
+      template: |
+        {
+          "text": "🚀 Telegram Bot 部署{{#success build.status}}成功{{else}}失败{{/success}}！\n分支: {{build.branch}}\n提交: {{build.commit}}\n构建: {{build.number}}"
+        }
+    when:
+      status:
+        - success
+        - failure
+
+---
+# 定义 secrets（需要在 Drone 中配置）
+kind: secret
+name: docker_username
+data: your_docker_username_base64
+
+---
+kind: secret
+name: docker_password
+data: your_docker_password_base64
+
+---
+kind: secret
+name: ssh_username
+data: your_ssh_username_base64
+
+---
+kind: secret
+name: ssh_password
+data: your_ssh_password_base64
+
+---
+kind: secret
+name: webhook_url
+data: your_notification_webhook_url_base64
