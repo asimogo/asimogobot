@@ -11,7 +11,7 @@ import { toParagraphBlocks, toCodeBlocks } from "../utils/notionChunks.js";
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY!;
 const NOTION_PAGE_ID = process.env.NOTION_PAGE_ID!;
-const NOTION_VERSION = "2025-08-08";
+const NOTION_VERSION = "2025-09-03";
 
 const MAX_RICH = 1900; // 留余量，低于 2000
 
