@@ -18,8 +18,6 @@ steps:
         from_secret: BAIDU_APPID
       BAIDU_SECRET:
         from_secret: BAIDU_SECRET
-      BAIDU_OCR_TOKEN:
-        from_secret: BAIDU_OCR_TOKEN
       DEEPSEEK_API_KEY:
         from_secret: DEEPSEEK_API_KEY
       FLOMO_WEBHOOK:
@@ -46,7 +44,7 @@ steps:
         set -eu
         required_vars="BOT_TOKEN DEEPSEEK_API_KEY REDIS_URL NODE_ENV TZ \
                        BAIDU_APPID BAIDU_SECRET BAIDU_OCR_TOKEN \
-                       FLOMO_WEBHOOK NOTION_API_KEY NOTION_PAGE_ID"
+                       FLOMO_WEBHOOK NOTION_API_KEY NOTION_PAGE_ID \"
         missing=0
         echo "🔍 Checking required envs from Drone secrets..."
         for k in $required_vars; do
