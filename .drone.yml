@@ -4,7 +4,7 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker:20.10.24-alpine
+    image: docker:alpine
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
