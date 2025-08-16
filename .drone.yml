@@ -42,9 +42,7 @@ steps:
       # 1) 必填项校验（逐个取"值"，不是"名字"）
       - |
         set -eu
-        required_vars="BOT_TOKEN DEEPSEEK_API_KEY REDIS_URL NODE_ENV TZ \
-                       BAIDU_APPID BAIDU_SECRET BAIDU_OCR_TOKEN \
-                       FLOMO_WEBHOOK NOTION_API_KEY NOTION_PAGE_ID \"
+        required_vars="BOT_TOKEN DEEPSEEK_API_KEY REDIS_URL NODE_ENV TZ BAIDU_APPID BAIDU_SECRET FLOMO_WEBHOOK NOTION_API_KEY NOTION_PAGE_ID"
         missing=0
         echo "🔍 Checking required envs from Drone secrets..."
         for k in $required_vars; do
@@ -53,7 +51,7 @@ steps:
             echo "❌ $k is EMPTY or missing"
             missing=1
           else
-            echo "✅ $k is set (length: ${#v})"
+            echo "✅ $k is set (length: $(echo "$v" | wc -c))"
           fi
         done
         [ "$missing" -eq 0 ] || { echo "⛔ Stop: some secrets are missing."; exit 1; }
@@ -64,7 +62,6 @@ steps:
         echo "BOT_TOKEN=\"$BOT_TOKEN\"" > .env
         echo "BAIDU_APPID=\"$BAIDU_APPID\"" >> .env
         echo "BAIDU_SECRET=\"$BAIDU_SECRET\"" >> .env
-        echo "BAIDU_OCR_TOKEN=\"$BAIDU_OCR_TOKEN\"" >> .env
         echo "DEEPSEEK_API_KEY=\"$DEEPSEEK_API_KEY\"" >> .env
         echo "FLOMO_WEBHOOK=\"$FLOMO_WEBHOOK\"" >> .env
         echo "NOTION_API_KEY=\"$NOTION_API_KEY\"" >> .env
