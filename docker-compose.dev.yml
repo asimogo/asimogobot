@@ -19,7 +19,7 @@ services:
   redis-commander:
     image: rediscommander/redis-commander:latest
     environment:
-      - REDIS_HOSTS=local:redis:6379
+      - REDIS_HOSTS=redis://192.168.0.105:6379
       - HTTP_USER=admin
       - HTTP_PASSWORD=admin
     ports:

@@ -9,7 +9,7 @@ steps:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
-      COMPOSE_PROJECT_NAME: tg-bot-prod
+      COMPOSE_PROJECT_NAME: asimogoBot
       TZ: Asia/Phnom_Penh
       BOT_TOKEN:
         from_secret: BOT_TOKEN
