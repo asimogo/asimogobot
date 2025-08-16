@@ -19,8 +19,8 @@ export class ResultHandler {
             console.log(`🔍 [ResultHandler] 分割为 ${chunks.length} 个片段`);
 
             const kb = new InlineKeyboard()
-                .text("保存到Flomo", JSON.stringify({ a: "save", t: taskId, to: "flomo" }))
-                .text("保存到Notion", JSON.stringify({ a: "save", t: taskId, to: "notion" }));
+                .text("📝保存到Flomo", JSON.stringify({ a: "save", t: taskId, to: "flomo" }))
+                .text("📘保存到Notion", JSON.stringify({ a: "save", t: taskId, to: "notion" }));
 
             for (let i = 0; i < chunks.length; i++) {
                 const isLast = i === chunks.length - 1;

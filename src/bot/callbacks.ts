@@ -11,7 +11,7 @@ const normTo = (to: string): "f" | "n" => (to.toLowerCase().startsWith("f") ? "f
 function buildSaveKB(taskId: string, saved: { f: boolean; n: boolean }) {
     const kb = new InlineKeyboard();
     if (saved.f) kb.text("✅ 已保存到 Flomo", JSON.stringify({ a: "noop" }));
-    else kb.text("✅ 保存到 Flomo", JSON.stringify({ a: "save", t: taskId, to: "flomo" }));
+    else kb.text("📝 保存到 Flomo", JSON.stringify({ a: "save", t: taskId, to: "flomo" }));
 
     if (saved.n) kb.text("✅ 已保存到 Notion", JSON.stringify({ a: "noop" }));
     else kb.text("📘 保存到 Notion", JSON.stringify({ a: "save", t: taskId, to: "notion" }));
