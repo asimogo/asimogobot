@@ -4,7 +4,7 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker/compose:1.29.2
+    image: docker/compose:2.21.0
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
@@ -31,7 +31,7 @@ steps:
       REDIS_URL: redis://192.168.0.105:6379
       NODE_ENV: production
     commands:
-      - docker-compose version
+      - docker compose version
 
       # 1) 必填项校验（逐个取"值"，不是"名字"）
       - |
@@ -56,18 +56,18 @@ steps:
       # 2) 写入 .env（允许变量展开）
       - |
         cat > .env <<EOF
-        BOT_TOKEN=${BOT_TOKEN}
-        BAIDU_APPID=${BAIDU_APPID}
-        BAIDU_SECRET=${BAIDU_SECRET}
-        BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
-        DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-        FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
-        NOTION_API_KEY=${NOTION_API_KEY}
-        NOTION_PAGE_ID=${NOTION_PAGE_ID}
-        REDIS_URL=${REDIS_URL}
-        NODE_ENV=${NODE_ENV}
-        TZ=${TZ}
-        EOF
+BOT_TOKEN=${BOT_TOKEN}
+BAIDU_APPID=${BAIDU_APPID}
+BAIDU_SECRET=${BAIDU_SECRET}
+BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
+DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
+NOTION_API_KEY=${NOTION_API_KEY}
+NOTION_PAGE_ID=${NOTION_PAGE_ID}
+REDIS_URL=${REDIS_URL}
+NODE_ENV=${NODE_ENV}
+TZ=${TZ}
+EOF
         echo "✅ .env generated."
 
       # 3) 脱敏检查：确认 .env 不为空（不泄露值）
@@ -76,21 +76,21 @@ steps:
         awk -F= '{printf("%-18s %s\n",$1, ($2==""?"<EMPTY>":"<SET>"))}' .env
 
       # 4) 构建 + 启动（如有变化会重建），并清理孤儿容器
-      - docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
+      - docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
       # 5) 基本状态与关键信息
-      - docker-compose -f docker-compose.prod.yml ps
-      - docker-compose -f docker-compose.prod.yml logs --tail=200 --no-color bot || true
+      - docker compose -f docker-compose.prod.yml ps
+      - docker compose -f docker-compose.prod.yml logs --tail=200 --no-color bot || true
 
       # 6) 容器内二次校验（确认 BOT_TOKEN 已注入；容器 running 才能 exec）
       - |
         # 等待最多 30s 直到容器变为 running（避免 "is restarting"）
         for i in $(seq 1 30); do
-          state=$(docker inspect -f '{{.State.Running}}' "$(docker-compose -f docker-compose.prod.yml ps -q bot)")
+          state=$(docker inspect -f '{{.State.Running}}' "$(docker compose -f docker-compose.prod.yml ps -q bot)")
           [ "$state" = "true" ] && break
           sleep 1
         done
-        tok=$(docker-compose -f docker-compose.prod.yml exec -T bot /bin/sh -lc 'printenv BOT_TOKEN || true' || true)
+        tok=$(docker compose -f docker-compose.prod.yml exec -T bot /bin/sh -lc 'printenv BOT_TOKEN || true' || true)
         if [ -z "$tok" ]; then
           echo "❌ BOT_TOKEN is missing inside container."
           exit 1
