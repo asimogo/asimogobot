@@ -33,7 +33,7 @@ export class CallbackHandler {
                 await this.sendReplyWithRetry(ctx, '✅已保存到Notion中');
             }
 
-            await this.answerCallbackQueryWithRetry(ctx, `已保存到 ${data.to}`);
+            await this.answerCallbackQueryWithRetry(ctx, `✅已保存到 ${data.to}`);
             console.log(`✅ [CallbackHandler] 回调处理完成`);
         } catch (e: any) {
             console.error(`❌ [CallbackHandler] 回调处理失败:`, e);
