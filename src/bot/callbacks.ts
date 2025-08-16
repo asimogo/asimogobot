@@ -24,13 +24,13 @@ export class CallbackHandler {
             if (data.to === "flomo") {
                 await this.flomo.save(text, ctx.from!.id);
                 console.log(`✅ [CallbackHandler] Flomo保存成功`);
-                await this.sendReplyWithRetry(ctx, '已保存到你的flomo中');
+                await this.sendReplyWithRetry(ctx, '✅已保存到你的flomo中');
             }
 
             if (data.to === "notion") {
                 await this.notion.save(text, ctx.from!.id);
                 console.log(`✅ [CallbackHandler] Notion保存成功`);
-                await this.sendReplyWithRetry(ctx, '已保存到Notion中');
+                await this.sendReplyWithRetry(ctx, '✅已保存到Notion中');
             }
 
             await this.answerCallbackQueryWithRetry(ctx, `已保存到 ${data.to}`);
