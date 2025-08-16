@@ -11,6 +11,7 @@ steps:
     environment:
       COMPOSE_PROJECT_NAME: asimogoBot
       TZ: Asia/Phnom_Penh
+      # ↓ 从 Drone secrets 注入 ↓
       BOT_TOKEN:
         from_secret: BOT_TOKEN
       BAIDU_APPID:
@@ -32,9 +33,23 @@ steps:
     commands:
       - docker-compose version
 
-      # 写入 .env（供 docker-compose.prod.yml 读取）
+      # 1) 必填项校验（防止空值写入 .env）
       - |
-        cat > .env <<'EOF'
+        required_vars="BOT_TOKEN DEEPSEEK_API_KEY REDIS_URL NODE_ENV TZ \
+                       BAIDU_APPID BAIDU_SECRET BAIDU_OCR_TOKEN \
+                       FLOMO_WEBHOOK NOTION_API_KEY NOTION_PAGE_ID"
+        for k in $required_vars; do
+          v=$(eval echo "\$$k")
+          if [ -z "$v" ]; then
+            echo "❌ Missing required env: $k"
+            exit 1
+          fi
+        done
+        echo "✅ All required envs are present."
+
+      # 2) 写入 .env（注意：不要给 EOF 加引号，允许变量展开）
+      - |
+        cat > .env <<EOF
         BOT_TOKEN=${BOT_TOKEN}
         BAIDU_APPID=${BAIDU_APPID}
         BAIDU_SECRET=${BAIDU_SECRET}
@@ -47,13 +62,26 @@ steps:
         NODE_ENV=${NODE_ENV}
         TZ=${TZ}
         EOF
+        echo "✅ .env file generated."
 
-      # 构建 + 启动 + 清理孤儿容器
+      # 3) 构建 + 启动（如有变化会重建），并清理孤儿容器
       - docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
-      # 基本状态与关键信息
+      # 4) 基本状态与关键信息
       - docker-compose -f docker-compose.prod.yml ps
       - docker-compose -f docker-compose.prod.yml logs --tail=200 --no-color bot || true
+
+      # 5) 容器内二次校验（确认变量已注入）
+      - |
+        inside=$(docker-compose -f docker-compose.prod.yml exec -T bot /bin/sh -lc 'printenv BOT_TOKEN || true')
+        if [ -z "$inside" ]; then
+          echo "❌ BOT_TOKEN is missing inside container."
+          exit 1
+        fi
+        echo "✅ BOT_TOKEN is present inside container (value hidden)."
+
+      # 6) 清理工作目录中的 .env（容器已拿到环境变量）
+      - rm -f .env
 
 volumes:
   - name: docker-sock
