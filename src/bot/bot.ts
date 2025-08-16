@@ -47,7 +47,7 @@ bot.use((ctx, next) => {
 
 const receiver = new MessageReceiver(queue);
 
-bot.command("start", ctx => ctx.reply("欢迎～ 发送文本或图片开始处理。相册请一次性发送。"));
+bot.command("start", ctx => ctx.reply("欢迎～ 发送文本或图片开始处理。相册请一次性发送。", { disable_notification: true }));
 bot.command("status", statusCommand);
 
 // 统一处理消息入口
