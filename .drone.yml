@@ -55,19 +55,19 @@ steps:
 
       # 2) 写入 .env（允许变量展开）
       - |
-        cat > .env <<EOF
-BOT_TOKEN=${BOT_TOKEN}
-BAIDU_APPID=${BAIDU_APPID}
-BAIDU_SECRET=${BAIDU_SECRET}
-BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
-DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
-NOTION_API_KEY=${NOTION_API_KEY}
-NOTION_PAGE_ID=${NOTION_PAGE_ID}
-REDIS_URL=${REDIS_URL}
-NODE_ENV=${NODE_ENV}
-TZ=${TZ}
-EOF
+        {
+          echo "BOT_TOKEN=${BOT_TOKEN}"
+          echo "BAIDU_APPID=${BAIDU_APPID}"
+          echo "BAIDU_SECRET=${BAIDU_SECRET}"
+          echo "BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}"
+          echo "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}"
+          echo "FLOMO_WEBHOOK=${FLOMO_WEBHOOK}"
+          echo "NOTION_API_KEY=${NOTION_API_KEY}"
+          echo "NOTION_PAGE_ID=${NOTION_PAGE_ID}"
+          echo "REDIS_URL=${REDIS_URL}"
+          echo "NODE_ENV=${NODE_ENV}"
+          echo "TZ=${TZ}"
+        } > .env
         echo "✅ .env generated."
 
       # 3) 脱敏检查：确认 .env 不为空（不泄露值）
