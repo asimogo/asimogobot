@@ -5,11 +5,12 @@ name: deploy-bot
 steps:
   - name: build-and-deploy
     image: docker/compose:latest
+    volumes:
+      - name: docker-sock
+        path: /var/run/docker.sock
     environment:
-      #（可选）给 compose 隔离工程名，避免跟其他项目容器冲突
       COMPOSE_PROJECT_NAME: tg-bot-prod
       TZ: Asia/Phnom_Penh
-      # ↓↓↓ 你的密钥仍来自 Drone secrets ↓↓↓
       BOT_TOKEN:
         from_secret: BOT_TOKEN
       BAIDU_APPID:
@@ -28,64 +29,41 @@ steps:
         from_secret: NOTION_PAGE_ID
       REDIS_URL: redis://192.168.0.105:6379
       NODE_ENV: production
-
-    volumes:
-      - name: docker-sock
-        path: /var/run/docker.sock
-
     commands:
-      - set -euo pipefail
-
-      # 基础工具
-      - apk add --no-cache curl
-
-      # 生成 .env（推荐：仓库放一个 .env.template）
-      # 如果暂时没有 .env.template，保留你的 heredoc 也行
-      - |
-        # 注意：下面用了 <<-EOF（TAB 去缩进），且 **必须使用真正的 Tab** 而不是空格
-        if [ -f .env.template ]; then
-          envsubst < .env.template > .env
-        else
-          cat > .env <<-EOF
-        BOT_TOKEN=${BOT_TOKEN}
-        DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-        REDIS_URL=${REDIS_URL}
-        NODE_ENV=${NODE_ENV}
-        TZ=${TZ}
-        BAIDU_APPID=${BAIDU_APPID}
-        BAIDU_SECRET=${BAIDU_SECRET}
-        BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
-        FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
-        NOTION_API_KEY=${NOTION_API_KEY}
-        NOTION_PAGE_ID=${NOTION_PAGE_ID}
-        EOF
-        fi
-
-      # 外部 Redis 端口连通性（准确）
-      - echo "🔍 检查外部 Redis 连接..."
-      - docker run --rm redis:7-alpine redis-cli -h 192.168.0.105 -p 6379 PING | grep PONG
-
-      # 停掉旧服务（移除孤儿容器，避免历史遗留）
+      - apk add --no-cache bash curl
+      - echo "🔍 检查网络连通性..."
+      - ping -c 3 192.168.0.105
+      - echo "🔧 创建环境变量文件..."
+      - echo "BOT_TOKEN=$${BOT_TOKEN}" > .env
+      - echo "DEEPSEEK_API_KEY=$${DEEPSEEK_API_KEY}" >> .env
+      - echo "REDIS_URL=$${REDIS_URL}" >> .env
+      - echo "NODE_ENV=$${NODE_ENV}" >> .env
+      - echo "TZ=$${TZ}" >> .env
+      - echo "BAIDU_APPID=$${BAIDU_APPID}" >> .env
+      - echo "BAIDU_SECRET=$${BAIDU_SECRET}" >> .env
+      - echo "BAIDU_OCR_TOKEN=$${BAIDU_OCR_TOKEN}" >> .env
+      - echo "FLOMO_WEBHOOK=$${FLOMO_WEBHOOK}" >> .env
+      - echo "NOTION_API_KEY=$${NOTION_API_KEY}" >> .env
+      - echo "NOTION_PAGE_ID=$${NOTION_PAGE_ID}" >> .env
+      - echo "📋 验证环境变量文件..."
+      - cat .env | head -5
       - echo "🛑 停止旧服务..."
       - docker-compose -f docker-compose.prod.yml down --remove-orphans || true
-
-      # 构建并启动
-      - echo "🚀 构建并部署服务..."
-      - docker-compose -f docker-compose.prod.yml up -d --build
-
-      # 等待健康（若配置了 healthcheck，这里会更精准）
-      - echo "⏳ 等待服务就绪..."
-      - sleep 8
+      - echo "🧹 清理旧资源..."
+      - docker system prune -f || true
+      - echo "🚀 构建和部署服务..."
+      - docker-compose -f docker-compose.prod.yml build
+      - docker-compose -f docker-compose.prod.yml up -d
+      - echo "⏳ 等待服务启动..."
+      - sleep 30
+      - echo "🏥 检查服务状态..."
       - docker-compose -f docker-compose.prod.yml ps
+      - echo "✅ 验证Bot容器..."
+      - docker-compose -f docker-compose.prod.yml exec -T bot node --version
+      - echo "🎉 部署完成！"
+      - docker-compose -f docker-compose.prod.yml logs --tail=10 bot
 
-      # 轻量运行检查：确保能 exec 进入 bot 并执行 node
-      - echo "🏥 运行检查（bot 容器）..."
-      - docker-compose -f docker-compose.prod.yml exec -T bot node -e "console.log('✅ Bot容器可用')"
-
-      # Redis 再次验证
-      - docker run --rm redis:7-alpine redis-cli -h 192.168.0.105 -p 6379 PING | grep PONG
-
-      # 显示最终状态
-      - echo "✅ 部署完成！"
-      - echo "📊 服务状态:"
-      - docker-compose -f docker-compose.prod.yml ps
+volumes:
+  - name: docker-sock
+    host:
+      path: /var/run/docker.sock

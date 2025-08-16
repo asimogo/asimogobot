@@ -1,8 +1,6 @@
 # Docker Compose 开发环境配置
 # 使用方法: docker-compose -f docker-compose.dev.yml up
 
-version: "3.8"
-
 services:
   # Redis服务 - 用于队列存储
   redis:
