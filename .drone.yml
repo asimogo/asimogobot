@@ -4,7 +4,7 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker:alpine
+    image: docker:dind
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
