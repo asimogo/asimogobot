@@ -9,7 +9,7 @@ steps:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
-      COMPOSE_PROJECT_NAME: "asimogo-bot"
+      COMPOSE_PROJECT_NAME: "asimogobot"
       TZ: "Asia/Phnom_Penh"
       # ↓ 从 Drone secrets 注入 ↓
       BOT_TOKEN:
