@@ -27,9 +27,7 @@ steps:
       NOTION_PAGE_ID:
         from_secret: NOTION_PAGE_ID
       REDIS_URL: "redis://192.168.0.105:6379"
-      NODE_ENV: "production"
-    commands:
-    - set -euo pipefail
+    commands:   
     - docker stop asimogobot || true
     - docker rm asimogobot || true
     #清理可能的重复容器
