@@ -34,10 +34,12 @@ steps:
       # 安装Docker Compose插件
       - apk add --no-cache curl
       - |
-        DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-        mkdir -p $DOCKER_CONFIG/cli-plugins
-        curl -SL https://github.com/docker/compose/releases/download/v2.24.1/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-        chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+        if [ -z "$DOCKER_CONFIG" ]; then
+          DOCKER_CONFIG="$HOME/.docker"
+        fi
+        mkdir -p "$DOCKER_CONFIG/cli-plugins"
+        curl -SL https://github.com/docker/compose/releases/download/v2.24.1/docker-compose-linux-x86_64 -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
+        chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
       - docker compose version
       # 1) 必填项校验（逐个取"值"，不是"名字"）
       - |
@@ -48,7 +50,7 @@ steps:
         missing=0
         echo "🔍 Checking required envs from Drone secrets..."
         for k in $required_vars; do
-          v=$(eval "echo \"\${$k}\"")
+          v=$(eval "echo \$$k")
           if [ -z "$v" ]; then
             echo "❌ $k is EMPTY or missing"
             missing=1
