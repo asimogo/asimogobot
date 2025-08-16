@@ -4,7 +4,7 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker:dind
+    image: docker:28-cli
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
@@ -45,6 +45,7 @@ steps:
         -e NOTION_PAGE_ID=$$NOTION_PAGE_ID
         -e REDIS_URL=$$REDIS_URL
         -e TZ=$$TZ
+        --restart unless-stopped 
         asimogobot:latest
 volumes:
   - name: docker-sock
