@@ -24,6 +24,9 @@ RUN npm run build || echo "No build script; skip build"
 # ---- Production runtime ----
 FROM base AS production
 ENV NODE_ENV=production
+# 确保日志正常输出到 stdout/stderr
+ENV NODE_OPTIONS="--unhandled-rejections=strict"
+ENV FORCE_COLOR=1
 USER node
 WORKDIR /app
 # 生产依赖

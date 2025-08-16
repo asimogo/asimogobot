@@ -9,7 +9,9 @@ services:
     environment:
       - TZ=Asia/Phnom_Penh
       - NODE_ENV=production
-      - START_CMD=node --experimental-loader=./alias-loader.mjs dist/bot/bot.js # ← 新增
+      - FORCE_COLOR=1
+      - NODE_OPTIONS=--unhandled-rejections=strict
+      - START_CMD=node dist/bot/bot.js
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "console.log('ok')"]
@@ -22,3 +24,6 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+    # 确保容器输出到 stdout/stderr
+    tty: true
+    stdin_open: true

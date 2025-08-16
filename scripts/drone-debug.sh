@@ -148,7 +148,6 @@ NODE_ENV=production
 TZ=Asia/Phnom_Penh
 BAIDU_APPID=test_appid
 BAIDU_SECRET=test_secret
-BAIDU_OCR_TOKEN=test_ocr_token
 FLOMO_WEBHOOK=https://example.com/webhook
 NOTION_API_KEY=test_notion_key
 NOTION_PAGE_ID=test_page_id

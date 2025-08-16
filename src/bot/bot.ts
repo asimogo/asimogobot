@@ -26,7 +26,6 @@ console.log("🔍 [Bot] 初始化TaskQueue...");
 console.log("🔍 [Bot] 百度OCR配置检查:");
 console.log(`  - BAIDU_APPID: ${process.env.BAIDU_APPID ? '✅ 已配置' : '❌ 未配置'}`);
 console.log(`  - BAIDU_SECRET: ${process.env.BAIDU_SECRET ? '✅ 已配置' : '❌ 未配置'}`);
-console.log(`  - BAIDU_OCR_TOKEN: ${process.env.BAIDU_OCR_TOKEN ? '✅ 已配置' : '❌ 未配置'}`);
 
 const queue = new TaskQueue(bot.api, process.env.BOT_TOKEN!, {
     deepseekKey: process.env.DEEPSEEK_API_KEY!,

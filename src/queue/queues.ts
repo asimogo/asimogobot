@@ -1,7 +1,7 @@
 import { Queue, Worker, type JobsOptions } from "bullmq"
 import { redis as connection } from "../services/redis.js";
 import { TextProcessor } from "./processors/text-processor.js";
-import { ResultHandler } from "src/services/result-handler.js";
+import { ResultHandler } from "../services/result-handler.js";
 import { markBusy, clearBusy, heartbeat } from "../services/user-state.js";
 import { OCRProcessor } from "../queue/processors/ocr-processor.js";
 
