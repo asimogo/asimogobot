@@ -1,8 +1,5 @@
-# Docker Compose 生产环境配置
-# 使用方法: docker-compose -f docker-compose.prod.yml up -d
-
+# 生产环境：只运行 bot；使用外部 Redis（192.168.0.105:6379）
 services:
-  # Telegram Bot应用 (生产模式)
   bot:
     build:
       context: .
@@ -10,32 +7,19 @@ services:
     env_file:
       - .env
     environment:
-      # Redis连接配置 - 使用外部Redis服务器
-      - REDIS_URL=redis://192.168.0.105:6379
-      # 生产环境配置
+      - TZ=Asia/Phnom_Penh
       - NODE_ENV=production
-      - TZ=Asia/Shanghai
+      # 可选：覆盖默认启动命令（见 Dockerfile 的 START_CMD 说明）
+      # - START_CMD=npm run start
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "console.log('Health check passed')"]
+      test: ["CMD", "node", "-e", "console.log('ok')"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 90s
-    # 生产环境日志配置
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
         max-size: "50m"
         max-file: "5"
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
-    # 使用host网络模式以访问外部Redis
-    network_mode: "host"

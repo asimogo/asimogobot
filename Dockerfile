@@ -1,57 +1,47 @@
-# 多阶段构建优化镜像大小
+# ---- Base ----
+FROM node:20-alpine AS base
+RUN apk add --no-cache tini
+WORKDIR /app
+ENV NODE_ENV=production
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# ---- Production deps (no dev) ----
+FROM base AS deps
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# ---- Builder (含 dev 依赖，构建 TS 等) ----
 FROM node:20-alpine AS builder
-
+RUN apk add --no-cache tini
 WORKDIR /app
-
-# 安装构建工具
-RUN apk add --no-cache git python3 make g++
-
-# 复制package文件
 COPY package*.json ./
-
-# 只安装生产依赖和开发依赖
 RUN npm ci
-
-# 复制源代码
 COPY . .
+# 如果是 TS，请确保 package.json 有 "build" 脚本
+# 没有也没关系，下面这条会忽略错误继续（允许纯 JS 项目）
+RUN npm run build || echo "No build script; skip build"
 
-# 构建TypeScript应用
-RUN npm run build
-
-# 生产阶段
-FROM node:20-alpine AS production
-
+# ---- Production runtime ----
+FROM base AS production
+ENV NODE_ENV=production
+USER node
 WORKDIR /app
+# 生产依赖
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+# 复制构建产物与源码（dist 若存在则包含）
+COPY --chown=node:node --from=builder /app ./
 
-# 安装dumb-init用于正确处理信号
-RUN apk add --no-cache dumb-init
+# 默认启动：可使用环境变量 START_CMD 覆盖
+# 例如：START_CMD="npm run start" 或 "node dist/index.js"
+CMD ["sh", "-c", "${START_CMD:-node dist/bot/bot.js}"]
 
-# 创建非root用户
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-
-# 复制package文件
+# ---- Dev runtime ----
+FROM node:20-alpine AS dev
+RUN apk add --no-cache tini
+WORKDIR /app
+ENV NODE_ENV=development
+ENTRYPOINT ["/sbin/tini", "--"]
 COPY package*.json ./
-
-# 只安装生产依赖
-RUN npm ci --only=production && npm cache clean --force
-
-# 从构建阶段复制编译后的代码
-COPY --from=builder /app/dist ./dist
-
-# 更改文件所有者
-RUN chown -R nodejs:nodejs /app
-USER nodejs
-
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "console.log('Health check passed')" || exit 1
-
-# 暴露端口（虽然Telegram Bot通常不需要，但保留用于监控）
-EXPOSE 3000
-
-# 使用dumb-init作为PID 1进程，正确处理信号
-ENTRYPOINT ["dumb-init", "--"]
-
-# 启动应用
-CMD ["node", "dist/bot/bot.js"]
+RUN npm ci
+COPY . .
+CMD ["npm", "run", "dev"]

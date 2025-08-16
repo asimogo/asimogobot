@@ -4,13 +4,14 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker:dind
+    image: docker/compose:latest
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
       COMPOSE_PROJECT_NAME: tg-bot-prod
       TZ: Asia/Phnom_Penh
+      # ↓ 从 Drone secrets 注入（在 Drone UI 创建同名 secret）
       BOT_TOKEN:
         from_secret: BOT_TOKEN
       BAIDU_APPID:
@@ -30,62 +31,38 @@ steps:
       REDIS_URL: redis://192.168.0.105:6379
       NODE_ENV: production
     commands:
-      # 安装 Docker Compose 和必要工具
-      - apk add --no-cache bash curl docker-compose
-      - docker-compose --version
+      - docker compose version
 
-      # 检查网络连通性
-      - echo "🔍 检查网络连通性..."
-      - ping -c 3 192.168.0.105
+      # 写入 .env（供 docker-compose.prod.yml 读取）
+      - |
+        cat > .env <<'EOF'
+        BOT_TOKEN=${BOT_TOKEN}
+        BAIDU_APPID=${BAIDU_APPID}
+        BAIDU_SECRET=${BAIDU_SECRET}
+        BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
+        DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+        FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
+        NOTION_API_KEY=${NOTION_API_KEY}
+        NOTION_PAGE_ID=${NOTION_PAGE_ID}
+        REDIS_URL=${REDIS_URL}
+        NODE_ENV=${NODE_ENV}
+        TZ=${TZ}
+        EOF
 
-      # 创建环境变量文件
-      - echo "🔧 创建环境变量文件..."
-      - echo "BOT_TOKEN=$${BOT_TOKEN}" > .env
-      - echo "DEEPSEEK_API_KEY=$${DEEPSEEK_API_KEY}" >> .env
-      - echo "REDIS_URL=$${REDIS_URL}" >> .env
-      - echo "NODE_ENV=$${NODE_ENV}" >> .env
-      - echo "TZ=$${TZ}" >> .env
-      - echo "BAIDU_APPID=$${BAIDU_APPID}" >> .env
-      - echo "BAIDU_SECRET=$${BAIDU_SECRET}" >> .env
-      - echo "BAIDU_OCR_TOKEN=$${BAIDU_OCR_TOKEN}" >> .env
-      - echo "FLOMO_WEBHOOK=$${FLOMO_WEBHOOK}" >> .env
-      - echo "NOTION_API_KEY=$${NOTION_API_KEY}" >> .env
-      - echo "NOTION_PAGE_ID=$${NOTION_PAGE_ID}" >> .env
+      # 构建 + 启动（如有变化会重建），并清理孤儿容器
+      - docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
-      # 验证环境变量文件
-      - echo "📋 验证环境变量文件..."
-      - cat .env | head -5
-
-      # 停止旧服务
-      - echo "🛑 停止旧服务..."
-      - docker-compose -f docker-compose.prod.yml down --remove-orphans || true
-
-      # 清理旧资源
-      - echo "🧹 清理旧资源..."
-      - docker system prune -f || true
-
-      # 构建和部署服务
-      - echo "🚀 构建和部署服务..."
-      - docker-compose -f docker-compose.prod.yml build
-      - docker-compose -f docker-compose.prod.yml up -d
-
-      # 等待服务启动
-      - echo "⏳ 等待服务启动..."
-      - sleep 30
-
-      # 检查服务状态
-      - echo "🏥 检查服务状态..."
-      - docker-compose -f docker-compose.prod.yml ps
-
-      # 验证Bot容器
-      - echo "✅ 验证Bot容器..."
-      - docker-compose -f docker-compose.prod.yml exec -T bot node --version || echo "容器可能还在启动中"
-
-      # 显示部署结果
-      - echo "🎉 部署完成！"
-      - docker-compose -f docker-compose.prod.yml logs --tail=10 bot
+      # 基本状态与关键信息
+      - docker compose -f docker-compose.prod.yml ps
+      - docker compose -f docker-compose.prod.yml logs --tail=200 --no-color bot || true
 
 volumes:
   - name: docker-sock
     host:
       path: /var/run/docker.sock
+
+trigger:
+  branch:
+    - main
+  event:
+    - push
