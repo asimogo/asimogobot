@@ -4,7 +4,7 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker:24.0.7-dind
+    image: docker:27-cli-alpine3.20
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
@@ -29,15 +29,7 @@ steps:
       REDIS_URL: "redis://192.168.0.105:6379"
       NODE_ENV: "production"
     commands:
-      # 安装Docker Compose插件
-      - apk add --no-cache curl
-      - |
-        if [ -z "$DOCKER_CONFIG" ]; then
-          DOCKER_CONFIG="$HOME/.docker"
-        fi
-        mkdir -p "$DOCKER_CONFIG/cli-plugins"
-        curl -SL https://github.com/docker/compose/releases/download/v2.24.1/docker-compose-linux-x86_64 -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
-        chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
+      # 现代 Docker CLI 已内置 Compose 插件，无需手动安装
       - docker compose version
       # 1) 必填项校验（逐个取"值"，不是"名字"）
       - |
