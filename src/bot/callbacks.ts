@@ -44,7 +44,7 @@ export class CallbackHandler {
     private async sendReplyWithRetry(ctx: Context, text: string, maxRetries: number = 3): Promise<void> {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                await ctx.reply(text);
+                await ctx.reply(text, ctx.msg?.message_id ? { reply_parameters: { message_id: ctx.msg.message_id } } : {});
                 return;
             } catch (error: any) {
                 console.error(`❌ [CallbackHandler] 发送回复失败 (尝试 ${attempt}/${maxRetries}):`, error?.message || error);
