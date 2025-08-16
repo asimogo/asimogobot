@@ -1,43 +1,14 @@
 {
   "compilerOptions": {
-    "forceConsistentCasingInFileNames": true,
-    // 文件结构
-    "rootDir": "./src",
-    "outDir": "./dist",
-   "baseUrl": ".",  
-        "paths": {
-      "@handlers/*": ["src/handlers/*"],
-      "@utils/*": ["src/utils/*"],
-      "@types": ["src/types"]
-    },
-    // Node.js 运行环境
-    "module": "NodeNext",
-    "target": "ES2022",
-    "moduleResolution": "NodeNext",
-    "lib": ["es2022"],
-
-    // 类型支持
-    "types": ["node"],
+    "target": "ES2020",
+    "module": "ES2020",
+    "outDir": "dist",
+    "moduleResolution": "node",
     "esModuleInterop": true,
-
-    // 输出选项
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // 类型检查加强
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // 模块相关
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "noUncheckedSideEffectImports": true,
-
-    // 其他
-    "skipLibCheck": true
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts"]
 }

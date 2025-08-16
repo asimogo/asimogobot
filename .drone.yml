@@ -27,24 +27,25 @@ steps:
       NOTION_PAGE_ID:
         from_secret: NOTION_PAGE_ID
       REDIS_URL: "redis://192.168.0.105:6379"
-    commands:   
-    - docker stop asimogobot || true
-    - docker rm asimogobot || true
-    #清理可能的重复容器
-    - docker ps -a | grep asimogobot | awk '{print $1}' | xargs -r docker rm -f
-      # 构建新镜像
-    - docker build -t asimogobot:latest . 
-    - docker run -d --name asimogobot  
-          -e BOT_TOKEN=$$BOT_TOKEN
-          -e BAIDU_APPID=$$BAIDU_APPID
-          -e BAIDU_SECRET=$$BAIDU_SECRET
-          -e DEEPSEEK_API_KEY=$$DEEPSEEK_API_KEY
-          -e FLOMO_WEBHOOK=$$FLOMO_WEBHOOK
-          -e NOTION_API_KEY=$$NOTION_API_KEY
-          -e NOTION_PAGE_ID=$$NOTION_PAGE_ID
-          -e REDIS_URL=$$REDIS_URL
-          -e TZ=$$TZ
-          asimogobot:latest
+    commands:
+      - docker stop asimogobot || true
+      - docker rm asimogobot || true
+      #清理可能的重复容器
+      - docker ps -a | grep asimogobot | awk '{print $1}' | xargs -r docker rm -f
+        # 构建新镜像
+      - docker build -t asimogobot:latest .
+
+      - docker run -d --name asimogobot
+        -e BOT_TOKEN=$$BOT_TOKEN
+        -e BAIDU_APPID=$$BAIDU_APPID
+        -e BAIDU_SECRET=$$BAIDU_SECRET
+        -e DEEPSEEK_API_KEY=$$DEEPSEEK_API_KEY
+        -e FLOMO_WEBHOOK=$$FLOMO_WEBHOOK
+        -e NOTION_API_KEY=$$NOTION_API_KEY
+        -e NOTION_PAGE_ID=$$NOTION_PAGE_ID
+        -e REDIS_URL=$$REDIS_URL
+        -e TZ=$$TZ
+        asimogobot:latest
 volumes:
   - name: docker-sock
     host:
