@@ -9,8 +9,8 @@ steps:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
-      COMPOSE_PROJECT_NAME: asimogoBot
-      TZ: Asia/Phnom_Penh
+      COMPOSE_PROJECT_NAME: "asimogoBot"
+      TZ: "Asia/Phnom_Penh"
       # ↓ 从 Drone secrets 注入 ↓
       BOT_TOKEN:
         from_secret: BOT_TOKEN
@@ -28,8 +28,8 @@ steps:
         from_secret: NOTION_API_KEY
       NOTION_PAGE_ID:
         from_secret: NOTION_PAGE_ID
-      REDIS_URL: redis://192.168.0.105:6379
-      NODE_ENV: production
+      REDIS_URL: "redis://192.168.0.105:6379"
+      NODE_ENV: "production"
     commands:
       - docker compose version
 
@@ -42,7 +42,7 @@ steps:
         missing=0
         echo "🔍 Checking required envs from Drone secrets..."
         for k in $required_vars; do
-          v=$(eval "printf '%s' \"\${$k:-}\"")   # ← 关键修正：取到实际值
+          v=$(eval "echo \"\$$k\"")
           if [ -z "$v" ]; then
             echo "❌ $k is EMPTY or missing"
             missing=1
