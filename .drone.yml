@@ -4,46 +4,90 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker:dind
+    image: docker/compose:latest
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
       BOT_TOKEN:
         from_secret: BOT_TOKEN
-      # 添加百度OCR相关的环境变量
+      # 百度OCR相关的环境变量
       BAIDU_APPID:
         from_secret: BAIDU_APPID
       BAIDU_SECRET:
         from_secret: BAIDU_SECRET
+      BAIDU_OCR_TOKEN:
+        from_secret: BAIDU_OCR_TOKEN
+      # AI服务配置
+      DEEPSEEK_API_KEY:
+        from_secret: DEEPSEEK_API_KEY
+      # 笔记服务配置
       FLOMO_WEBHOOK:
         from_secret: FLOMO_WEBHOOK
       NOTION_API_KEY:
         from_secret: NOTION_API_KEY
       NOTION_PAGE_ID:
         from_secret: NOTION_PAGE_ID
-      DEEPSEEK_API_KEY:
-        from_secret: DEEPSEEK_API_KEY
-            
+      # Redis配置 - 外部服务器
+      REDIS_URL: redis://192.168.0.105:6379
+      # 运行环境配置
+      NODE_ENV: production
+      TZ: Asia/Shanghai
 
     commands:
-      # 确保停止所有旧容器实例
-      - docker stop asimogobot || true
-      - docker rm asimogobot || true
-      # 清理可能的重复容器
-      - docker ps -a | grep asimogobot | awk '{print $1}' | xargs -r docker rm -f
-      # 构建新镜像
-      - docker build -t asimogobot:latest .
-      # 启动新容器，传递所有必要的环境变量
-      - docker run -d --name asimogobot
-        -e BOT_TOKEN=$$BOT_TOKEN
-        -e BAIDU_APPID=$$BAIDU_APPID
-        -e BAIDU_SECRET=$$BAIDU_SECRET
-        -e DEEPSEEK_API_KEY=$$DEEPSEEK_API_KEY
-        -e FLOMO_WEBHOOK=$$FLOMO_WEBHOOK
-        -e NOTION_API_KEY=$$NOTION_API_KEY
-        -e NOTION_PAGE_ID=$$NOTION_PAGE_ID
-        asimogobot:latest
+      # 安装必要工具
+      - apk add --no-cache bash curl
+
+      # 检查外部Redis连接
+      - echo "🔍 检查外部Redis服务器连接..."
+      - ping -c 3 192.168.0.105 || (echo "❌ 无法ping通Redis服务器" && exit 1)
+
+      # 创建环境变量文件
+      - echo "🔧 配置环境变量..."
+      - |
+        cat > .env << EOF
+        BOT_TOKEN=$${BOT_TOKEN}
+        DEEPSEEK_API_KEY=$${DEEPSEEK_API_KEY}
+        REDIS_URL=$${REDIS_URL}
+        NODE_ENV=$${NODE_ENV}
+        TZ=$${TZ}
+        BAIDU_APPID=$${BAIDU_APPID}
+        BAIDU_SECRET=$${BAIDU_SECRET}
+        BAIDU_OCR_TOKEN=$${BAIDU_OCR_TOKEN}
+        FLOMO_WEBHOOK=$${FLOMO_WEBHOOK}
+        NOTION_API_KEY=$${NOTION_API_KEY}
+        NOTION_PAGE_ID=$${NOTION_PAGE_ID}
+        EOF
+
+      # 停止旧服务
+      - echo "🛑 停止旧服务..."
+      - docker-compose -f docker-compose.prod.yml down || true
+      - docker-compose -f docker-compose.yml down || true
+
+      # 清理旧容器和镜像
+      - echo "🧹 清理旧资源..."
+      - docker container prune -f || true
+      - docker image prune -f || true
+
+      # 构建和部署新服务
+      - echo "🚀 构建和部署服务..."
+      - docker-compose -f docker-compose.prod.yml build
+      - docker-compose -f docker-compose.prod.yml up -d
+
+      # 等待服务就绪
+      - echo "⏳ 等待服务就绪..."
+      - sleep 30
+
+      # 健康检查
+      - echo "🏥 执行健康检查..."
+      - docker-compose -f docker-compose.prod.yml ps
+      - docker-compose -f docker-compose.prod.yml exec -T bot node -e "console.log('✅ Bot容器正常')" || (echo "❌ Bot容器异常" && exit 1)
+      - docker-compose -f docker-compose.prod.yml exec -T bot sh -c "redis-cli -h 192.168.0.105 -p 6379 ping" || (echo "❌ Redis连接失败" && exit 1)
+
+      # 显示部署结果
+      - echo "✅ 部署完成！"
+      - echo "📊 服务状态:"
+      - docker-compose -f docker-compose.prod.yml ps
 
 volumes:
   - name: docker-sock

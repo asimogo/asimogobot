@@ -1,0 +1,80 @@
+# Docker Compose 开发环境配置
+# 使用方法: docker-compose -f docker-compose.dev.yml up
+
+version: "3.8"
+
+services:
+  # Redis服务 - 用于队列存储
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - bot_network
+
+  # Redis管理界面 (开发环境)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - bot_network
+
+    # Telegram Bot应用 (开发模式)
+  bot:
+    build:
+      context: .
+      target: builder
+    env_file:
+      - .env
+    environment:
+      # Redis连接配置 - 开发环境也可使用外部Redis
+      - REDIS_URL=redis://192.168.0.105:6379
+      # 开发环境配置
+      - NODE_ENV=development
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # 挂载源代码用于热重载
+      - ./src:/app/src:ro
+      - ./package.json:/app/package.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./nodemon.json:/app/nodemon.json:ro
+    command: npm run dev
+    networks:
+      - bot_network
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 数据卷配置
+volumes:
+  redis_dev_data:
+    driver: local
+
+# 网络配置
+networks:
+  bot_network:
+    driver: bridge
