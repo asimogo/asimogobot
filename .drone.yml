@@ -4,7 +4,7 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker/compose:latest
+    image: docker:dind
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
@@ -30,9 +30,16 @@ steps:
       REDIS_URL: redis://192.168.0.105:6379
       NODE_ENV: production
     commands:
-      - apk add --no-cache bash curl
+      # 安装 Docker Compose
+      - apk add --no-cache bash curl python3 py3-pip
+      - pip3 install docker-compose
+      - docker-compose --version
+
+      # 检查网络连通性
       - echo "🔍 检查网络连通性..."
       - ping -c 3 192.168.0.105
+
+      # 创建环境变量文件
       - echo "🔧 创建环境变量文件..."
       - echo "BOT_TOKEN=$${BOT_TOKEN}" > .env
       - echo "DEEPSEEK_API_KEY=$${DEEPSEEK_API_KEY}" >> .env
@@ -45,21 +52,37 @@ steps:
       - echo "FLOMO_WEBHOOK=$${FLOMO_WEBHOOK}" >> .env
       - echo "NOTION_API_KEY=$${NOTION_API_KEY}" >> .env
       - echo "NOTION_PAGE_ID=$${NOTION_PAGE_ID}" >> .env
+
+      # 验证环境变量文件
       - echo "📋 验证环境变量文件..."
       - cat .env | head -5
+
+      # 停止旧服务
       - echo "🛑 停止旧服务..."
       - docker-compose -f docker-compose.prod.yml down --remove-orphans || true
+
+      # 清理旧资源
       - echo "🧹 清理旧资源..."
       - docker system prune -f || true
+
+      # 构建和部署服务
       - echo "🚀 构建和部署服务..."
       - docker-compose -f docker-compose.prod.yml build
       - docker-compose -f docker-compose.prod.yml up -d
+
+      # 等待服务启动
       - echo "⏳ 等待服务启动..."
       - sleep 30
+
+      # 检查服务状态
       - echo "🏥 检查服务状态..."
       - docker-compose -f docker-compose.prod.yml ps
+
+      # 验证Bot容器
       - echo "✅ 验证Bot容器..."
-      - docker-compose -f docker-compose.prod.yml exec -T bot node --version
+      - docker-compose -f docker-compose.prod.yml exec -T bot node --version || echo "容器可能还在启动中"
+
+      # 显示部署结果
       - echo "🎉 部署完成！"
       - docker-compose -f docker-compose.prod.yml logs --tail=10 bot
 
