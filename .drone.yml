@@ -9,7 +9,7 @@ steps:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
-      COMPOSE_PROJECT_NAME: "asimogoBot"
+      COMPOSE_PROJECT_NAME: "asimogo-bot"
       TZ: "Asia/Phnom_Penh"
       # ↓ 从 Drone secrets 注入 ↓
       BOT_TOKEN:
@@ -48,7 +48,7 @@ steps:
         missing=0
         echo "🔍 Checking required envs from Drone secrets..."
         for k in $required_vars; do
-          v=$(eval "echo \"\$$k\"")
+          v=$(eval "echo \"\${$k}\"")
           if [ -z "$v" ]; then
             echo "❌ $k is EMPTY or missing"
             missing=1
@@ -61,19 +61,21 @@ steps:
 
       # 2) 写入 .env（允许变量展开）
       - |
-        {
-          echo "BOT_TOKEN=${BOT_TOKEN}"
-          echo "BAIDU_APPID=${BAIDU_APPID}"
-          echo "BAIDU_SECRET=${BAIDU_SECRET}"
-          echo "BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}"
-          echo "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}"
-          echo "FLOMO_WEBHOOK=${FLOMO_WEBHOOK}"
-          echo "NOTION_API_KEY=${NOTION_API_KEY}"
-          echo "NOTION_PAGE_ID=${NOTION_PAGE_ID}"
-          echo "REDIS_URL=${REDIS_URL}"
-          echo "NODE_ENV=${NODE_ENV}"
-          echo "TZ=${TZ}"
-        } > .env
+        cat > .env << EOF
+        BOT_TOKEN=${BOT_TOKEN}
+        BAIDU_APPID=${BAIDU_APPID}
+        BAIDU_SECRET=${BAIDU_SECRET}
+        BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
+        DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+        FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
+        NOTION_API_KEY=${NOTION_API_KEY}
+        NOTION_PAGE_ID=${NOTION_PAGE_ID}
+        REDIS_URL=${REDIS_URL}
+        NODE_ENV=${NODE_ENV}
+        TZ=${TZ}
+        EOF
+        # 移除行首空格
+        sed -i 's/^[[:space:]]*//' .env
         echo "✅ .env generated."
 
       # 3) 脱敏检查：确认 .env 不为空（不泄露值）
