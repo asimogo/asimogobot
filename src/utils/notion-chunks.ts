@@ -1,4 +1,4 @@
-// utils/notionChunks.ts
+// src/utils/notion-chunks.ts
 export function chunkText(input: string, max = 1900): string[] {
     const out: string[] = [];
     for (let i = 0; i < input.length; i += max) out.push(input.slice(i, i + max));
