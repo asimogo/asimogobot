@@ -4,14 +4,13 @@ name: deploy-bot
 
 steps:
   - name: build-and-deploy
-    image: docker/compose:latest
+    image: docker/compose:1.29.2
     volumes:
       - name: docker-sock
         path: /var/run/docker.sock
     environment:
       COMPOSE_PROJECT_NAME: tg-bot-prod
       TZ: Asia/Phnom_Penh
-      # ↓ 从 Drone secrets 注入（在 Drone UI 创建同名 secret）
       BOT_TOKEN:
         from_secret: BOT_TOKEN
       BAIDU_APPID:
@@ -31,7 +30,7 @@ steps:
       REDIS_URL: redis://192.168.0.105:6379
       NODE_ENV: production
     commands:
-      - docker compose version
+      - docker-compose version
 
       # 写入 .env（供 docker-compose.prod.yml 读取）
       - |
@@ -49,12 +48,12 @@ steps:
         TZ=${TZ}
         EOF
 
-      # 构建 + 启动（如有变化会重建），并清理孤儿容器
-      - docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+      # 构建 + 启动 + 清理孤儿容器
+      - docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
       # 基本状态与关键信息
-      - docker compose -f docker-compose.prod.yml ps
-      - docker compose -f docker-compose.prod.yml logs --tail=200 --no-color bot || true
+      - docker-compose -f docker-compose.prod.yml ps
+      - docker-compose -f docker-compose.prod.yml logs --tail=200 --no-color bot || true
 
 volumes:
   - name: docker-sock
