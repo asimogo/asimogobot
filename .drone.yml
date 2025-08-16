@@ -42,25 +42,23 @@ steps:
       # 生成 .env（推荐：仓库放一个 .env.template）
       # 如果暂时没有 .env.template，保留你的 heredoc 也行
       - |
+        # 注意：下面用了 <<-EOF（TAB 去缩进），且 **必须使用真正的 Tab** 而不是空格
         if [ -f .env.template ]; then
-          echo "🔧 使用 .env.template 生成 .env ..."
-          apk add --no-cache gettext
           envsubst < .env.template > .env
         else
-          echo "🔧 直接生成 .env ..."
-          cat > .env << EOF
-          BOT_TOKEN=${BOT_TOKEN}
-          DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-          REDIS_URL=${REDIS_URL}
-          NODE_ENV=${NODE_ENV}
-          TZ=${TZ}
-          BAIDU_APPID=${BAIDU_APPID}
-          BAIDU_SECRET=${BAIDU_SECRET}
-          BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
-          FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
-          NOTION_API_KEY=${NOTION_API_KEY}
-          NOTION_PAGE_ID=${NOTION_PAGE_ID}
-          EOF
+          cat > .env <<-EOF
+        BOT_TOKEN=${BOT_TOKEN}
+        DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+        REDIS_URL=${REDIS_URL}
+        NODE_ENV=${NODE_ENV}
+        TZ=${TZ}
+        BAIDU_APPID=${BAIDU_APPID}
+        BAIDU_SECRET=${BAIDU_SECRET}
+        BAIDU_OCR_TOKEN=${BAIDU_OCR_TOKEN}
+        FLOMO_WEBHOOK=${FLOMO_WEBHOOK}
+        NOTION_API_KEY=${NOTION_API_KEY}
+        NOTION_PAGE_ID=${NOTION_PAGE_ID}
+        EOF
         fi
 
       # 外部 Redis 端口连通性（准确）
