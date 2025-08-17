@@ -46,7 +46,7 @@ export class MessageReceiver {
             console.log("🔍 [MessageReceiver] 处理文本消息");
             const text = ctx.message!.text!;
             await this.queue.add("text", { taskId, chatId, userId, text, mode: ProcessingMode.PROCESS });
-            await ctx.reply("已收到文本，开始处理...");
+            await ctx.reply("已收到文本，开始处理⚙️...", { disable_notification: true });
             return;
         }
 
@@ -75,7 +75,7 @@ export class MessageReceiver {
                 }, { jobId: taskId, ...defaultJobOpts });
 
                 console.log(`🔍 [MessageReceiver] OCR任务添加成功: ${job?.id}`);
-                await ctx.reply("我收到了图片，开始识别～");
+                await ctx.reply("我收到了图片，开始识别 🔍～", { disable_notification: true });
                 console.log("🔍 [MessageReceiver] 已发送确认消息");
             } catch (error) {
                 console.error("❌ [MessageReceiver] 添加OCR任务失败:", error);

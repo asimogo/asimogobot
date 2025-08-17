@@ -100,7 +100,7 @@ export class CallbackHandler {
             // await this.answerCallbackQueryWithRetry(ctx, `✅ 已保存到 ${data.to}`);
             // console.log(`✅ [CallbackHandler] 回调处理完成`);
 
-            await ctx.answerCallbackQuery({ text: to === "f" ? "正在保存到 Flomo…" : "正在保存到 Notion…" });
+            await ctx.answerCallbackQuery({ text: to === "f" ? "🔄 正在保存到 Flomo…" : "🔄 正在保存到 Notion…" });
 
             if (!alreadySaved) {
                 if (to === "f") {
@@ -141,7 +141,7 @@ export class CallbackHandler {
                         : undefined,
                 });
             } else {
-                await ctx.answerCallbackQuery({ text: "已保存过啦" });
+                await ctx.answerCallbackQuery({ text: "💡 已保存过啦" });
             }
         } catch (e: any) {
             console.error(`❌ [CallbackHandler] 回调处理失败:`, e);
