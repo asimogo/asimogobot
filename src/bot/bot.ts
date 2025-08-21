@@ -2,6 +2,7 @@ import { handleSinglePhoto } from '../handlers/handleSinglePhoto.js';
 import { handleMediaGroupPhoto } from '../handlers/handleMediaGroupPhoto.js';
 import { handleFlomo } from '../handlers/handleFlomo.js';
 import { handleNotion } from '../handlers/handleNotion.js';
+import { handleWechatLink } from '../handlers/link-wechat.js';
 import { Bot, session } from 'grammy';
 import type { MyContext, SessionData } from '../utils/types.js';
 import dotenv from 'dotenv';
@@ -32,6 +33,10 @@ bot.on('message:photo', async (ctx) => {
     } else {
         await handleSinglePhoto(ctx);
     }
+});
+
+bot.on('message:text', async (ctx) => {
+    await handleWechatLink(ctx);
 });
 
 
