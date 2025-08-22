@@ -316,6 +316,29 @@ export class NotionAPI {
 
             console.log(`🔍 [NotionAPI] 生成了 ${children.length} 个内容块`);
 
+            // 检查块数量是否超过Notion限制（100个）
+            if (children.length > 100) {
+                console.warn(`⚠️ [NotionAPI] 块数量 ${children.length} 超过Notion限制100，将截断到99个并添加说明块`);
+                const truncatedChildren = children.slice(0, 99);
+
+                // 在最后添加一个说明块（这样总共就是100个块）
+                truncatedChildren.push({
+                    object: "block",
+                    type: "paragraph",
+                    paragraph: {
+                        rich_text: [{
+                            type: "text",
+                            text: {
+                                content: `⚠️ 注意：由于内容过长，已截断显示。原始内容包含 ${children.length} 个块，当前显示前99个。`
+                            }
+                        }]
+                    }
+                });
+
+                console.log(`🔍 [NotionAPI] 截断后块数量: ${truncatedChildren.length}`);
+                children.splice(0, children.length, ...truncatedChildren);
+            }
+
             const body = {
                 parent: { page_id: this.pageId },
                 properties: {

@@ -103,14 +103,41 @@ export class CallbackHandler {
             await ctx.answerCallbackQuery({ text: to === "f" ? "🔄 正在保存到 Flomo…" : "🔄 正在保存到 Notion…" });
 
             if (!alreadySaved) {
-                if (to === "f") {
-                    await this.flomo.save(text, ctx.from!.id);
-                } else {
-                    await this.notion.save(text, ctx.from!.id);
+                try {
+                    if (to === "f") {
+                        await this.flomo.save(text, ctx.from!.id);
+                    } else {
+                        await this.notion.save(text, ctx.from!.id);
+                    }
+                    await redis.sadd(key, to);
+                    // 可选：跟结果缓存同寿命
+                    await redis.expire(key, 60 * 60 * 24);
+                } catch (saveError: any) {
+                    console.error(`❌ [CallbackHandler] 保存到 ${data.to} 失败:`, saveError);
+
+                    // 特殊处理Notion块数量超限错误
+                    if (to === "n" && saveError.message?.includes("body.children.length应该≤100")) {
+                        console.warn(`⚠️ [CallbackHandler] 检测到Notion块数量超限，尝试截断处理`);
+
+                        try {
+                            // 截断文本到合适长度（大约减少30%来确保不超限）
+                            const truncatedText = text.slice(0, Math.floor(text.length * 0.7));
+                            console.log(`🔍 [CallbackHandler] 截断后文本长度: ${truncatedText.length} (原长度: ${text.length})`);
+
+                            await this.notion.save(truncatedText, ctx.from!.id);
+                            await redis.sadd(key, to);
+                            await redis.expire(key, 60 * 60 * 24);
+
+                            console.log(`✅ [CallbackHandler] Notion截断保存成功`);
+                        } catch (retryError: any) {
+                            console.error(`❌ [CallbackHandler] Notion截断保存也失败:`, retryError);
+                            throw new Error(`Notion保存失败：内容过长且截断后仍无法保存 - ${retryError.message}`);
+                        }
+                    } else {
+                        // 其他保存错误，直接抛出
+                        throw saveError;
+                    }
                 }
-                await redis.sadd(key, to);
-                // 可选：跟结果缓存同寿命
-                await redis.expire(key, 60 * 60 * 24);
             }
 
             // 3) 重新读取真实状态 → 重建键盘（不会“清掉”先前的 noop）
