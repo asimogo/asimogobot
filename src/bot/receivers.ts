@@ -2,6 +2,7 @@ import { type MyContext } from "../types/context.js";
 import { MessageType, ProcessingMode } from "../types/enums.js";
 import { TaskQueue, defaultJobOpts } from "../queue/queues.js";
 import { getUserBusy } from "../services/user-state.js";
+import { tryCatch } from "bullmq";
 
 
 
@@ -15,11 +16,20 @@ export class MessageReceiver {
     classifyMessage(ctx: MyContext): MessageType {
         const m = ctx.message;
         if (!m) return MessageType.UNKNOWN;
-        if (m.text && m.text.trim()) return MessageType.TEXT;
+
+        if (m.text && m.text.trim()) {
+            // 检查文本中是否包含网址链接
+            const urlRegex = /(https?:\/\/[^\s]+)/i;
+            if (urlRegex.test(m.text)) {
+                return MessageType.WEB_LINK;
+            }
+            return MessageType.TEXT;
+        }
 
         if (m.photo?.length) {
             return m.media_group_id ? MessageType.MEDIA_GROUP : MessageType.SINGLE_PHOTO;
         }
+
         return MessageType.UNKNOWN;
     }
 
@@ -81,6 +91,27 @@ export class MessageReceiver {
                 console.error("❌ [MessageReceiver] 添加OCR任务失败:", error);
                 await ctx.reply("抱歉，处理图片时出现错误，请稍后重试。");
             }
+            return;
+        }
+
+        if (type === MessageType.WEB_LINK) {
+            console.log("🔍 [MessageReceiver] 处理网址链接消息");
+            const text = ctx.message!.text!;
+            // 提取URL
+            const urlRegex = /(https?:\/\/[^\s]+)/i;
+            const urlMatch = text.match(urlRegex);
+            const url = urlMatch ? urlMatch[1] : '';
+
+            console.log(`🔍 [MessageReceiver] 检测到URL: ${url}`);
+            const job = await this.queue.add('web-link', {
+                taskId,
+                chatId,
+                userId,
+                url,
+                mode: ProcessingMode.PROCESS
+            });
+            await ctx.reply("我收到了网址链接 🔗，开始处理...", { disable_notification: true });
+
             return;
         }
 

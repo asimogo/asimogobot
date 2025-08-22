@@ -1,6 +1,6 @@
 
 import { redis } from "./redis.js";
-export type Phase = "OCR" | "DEEPSEEK" | "SENDING" | "IDLE";
+export type Phase = "OCR" | "DEEPSEEK" | "SENDING" | "IDLE" | "WEB_LINK";
 
 const key = (uid: number) => `u:${uid}:task`;
 

@@ -40,5 +40,20 @@ export class TextProcessor {
         return result;
     }
 
+    // 新增：专门处理网页内容
+    async processWebpageContent(webpageContent: string) {
+        console.log("🔍 [TextProcessor] 开始处理网页内容");
+        console.log(`🔍 [TextProcessor] 网页原始内容长度: ${webpageContent.length}`);
+
+        const clean = this.preprocessText(webpageContent);
+        console.log(`🔍 [TextProcessor] 预处理后内容长度: ${clean.length}`);
+
+        // 网页内容使用PROCESS模式进行处理，通过DeepSeek API进行润色和优化
+        const result = await this.callDeepSeekAPI(clean, "PROCESS");
+        console.log(`🔍 [TextProcessor] DeepSeek处理完成，结果长度: ${result.length}`);
+
+        return result;
+    }
+
 
 }

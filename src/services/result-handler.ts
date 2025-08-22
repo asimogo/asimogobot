@@ -10,7 +10,7 @@ export class ResultHandler {
         await redis.setex(`task:${taskId}:result`, 60 * 60 * 24, text);
     }
 
-    async sendResultToUser(chatId: number, text: string, taskId: string, type: "TEXT" | "OCR") {
+    async sendResultToUser(chatId: number, text: string, taskId: string, type: "TEXT" | "OCR" | "WEB_LINK") {
         console.log(`🔍 [ResultHandler] 开始发送结果: chatId=${chatId}, taskId=${taskId}, type=${type}`);
         console.log(`🔍 [ResultHandler] 结果长度: ${text.length}`);
 

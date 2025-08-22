@@ -4,11 +4,13 @@ import { TextProcessor } from "./processors/text-processor.js";
 import { ResultHandler } from "../services/result-handler.js";
 import { markBusy, clearBusy, heartbeat } from "../services/user-state.js";
 import { OCRProcessor } from "../queue/processors/ocr-processor.js";
+import { WebLinkProcessor } from "./processors/web-link-processor.js";
 
 
 export class TaskQueue {
     textQueue: Queue;
     ocrQueue: Queue;
+    webLinkQueue: Queue;
 
     constructor(
         private api: any,
@@ -21,6 +23,7 @@ export class TaskQueue {
     ) {
         this.textQueue = new Queue('text', { connection });
         this.ocrQueue = new Queue("ocr", { connection });
+        this.webLinkQueue = new Queue("web-link", { connection });
     }
 
 
@@ -33,6 +36,7 @@ export class TaskQueue {
             this.opts.baiduAppId,
             this.opts.baiduSecret
         );
+        const webLinkProc = new WebLinkProcessor(this.opts.deepseekKey);
         const result = new ResultHandler(this.api);
 
         new Worker("text", async job => {
@@ -102,10 +106,38 @@ export class TaskQueue {
 
         }, { connection });
 
+        new Worker("web-link", async job => {
+            console.log(`🔍 [WebLink Worker] 开始处理任务: ${job.name}#${job.id}`);
+            console.log(`🔍 [WebLink Worker] 任务数据:`, job.data);
+
+            const { userId } = job.data;
+            await markBusy(userId, job.data.taskId, "WEB_LINK");
+            try {
+                console.log("🔍 [WebLink Worker] 处理网页链接");
+                const content = await webLinkProc.process(job as any);
+
+                console.log(`🔍 [WebLink Worker] 网页内容处理完成，长度: ${content.length}`);
+                await heartbeat(userId);
+
+                console.log("🔍 [WebLink Worker] 开始发送结果");
+                await result.sendResultToUser(job.data.chatId, content, job.data.taskId, "WEB_LINK");
+                console.log("🔍 [WebLink Worker] 结果发送完成");
+
+                return content;
+
+            } catch (error) {
+                console.error(`❌ [WebLink Worker] 处理任务失败: ${job.name}#${job.id}`, error);
+                throw error;
+            } finally {
+                await clearBusy(userId);
+                console.log(`🔍 [WebLink Worker] 任务完成清理: ${job.name}#${job.id}`);
+            }
+        }, { connection });
+
     }
 
 
-    async add(type: "text" | "ocr-single" | "ocr-media-group", data: any, jobOpts?: JobsOptions) {
+    async add(type: "text" | "ocr-single" | "ocr-media-group" | "web-link", data: any, jobOpts?: JobsOptions) {
         console.log(`🔍 [TaskQueue] 添加任务: type=${type}, taskId=${data.taskId}`);
         console.log(`🔍 [TaskQueue] 任务数据:`, data);
         console.log(`🔍 [TaskQueue] 任务选项:`, jobOpts);
@@ -119,6 +151,13 @@ export class TaskQueue {
             console.log("🔍 [TaskQueue] 添加到OCR队列");
             const job = await this.ocrQueue.add(type, data, jobOpts);
             console.log(`🔍 [TaskQueue] OCR任务添加成功: ${job.id}`);
+            return job;
+        }
+
+        if (type === "web-link") {
+            console.log("🔍 [TaskQueue] 添加到网页链接队列");
+            const job = await this.webLinkQueue.add("web-link", data, jobOpts);
+            console.log(`🔍 [TaskQueue] 网页链接任务添加成功: ${job.id}`);
             return job;
         }
 
@@ -138,11 +177,13 @@ export const defaultJobOpts: JobsOptions = {
 
 export const textQueue = new Queue("text", { connection });
 export const ocrQueue = new Queue("ocr", { connection });
+export const webLinkQueue = new Queue("web-link", { connection });
 
 /** 提供给 /status 的计数 */
 export async function getQueueOverview() {
     const t = await textQueue.getJobCounts("waiting", "active", "delayed", "failed", "completed");
     const o = await ocrQueue.getJobCounts("waiting", "active", "delayed", "failed", "completed");
-    return { text: t, ocr: o };
+    const w = await webLinkQueue.getJobCounts("waiting", "active", "delayed", "failed", "completed");
+    return { text: t, ocr: o, webLink: w };
 }
 
