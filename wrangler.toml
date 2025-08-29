@@ -1,7 +1,5 @@
-name = "asimogobot"
+name = "your-worker-name"
 compatibility_date = "2025-08-29"
-
-[compatibility_flags]
-nodejs_compat = true
-
 main = "src/bot/bot.ts"
+
+compatibility_flags = ["nodejs_compat"]
