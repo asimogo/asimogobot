@@ -1,4 +1,4 @@
-name = "your-worker-name"
+name = "asimogobot"
 compatibility_date = "2025-08-29"
 main = "src/bot/bot.ts"
 
